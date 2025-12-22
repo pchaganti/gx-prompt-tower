@@ -100,19 +100,19 @@ function getWebviewContent(
 
   // Get provider logo URIs
   const chatgptLogo = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "chatgpt.png")
+    vscode.Uri.joinPath(extensionUri, "assets", "chatgpt.png")
   );
   const claudeLogo = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "claude.png")
+    vscode.Uri.joinPath(extensionUri, "assets", "claude.png")
   );
   const geminiLogo = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "gemini.png")
+    vscode.Uri.joinPath(extensionUri, "assets", "gemini.png")
   );
   const aistudioLogo = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "aistudio.png")
+    vscode.Uri.joinPath(extensionUri, "assets", "aistudio.png")
   );
   const cursorLogo = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "cursor.png")
+    vscode.Uri.joinPath(extensionUri, "assets", "cursor.png")
   );
 
   // Use the modular HTML generator
@@ -150,7 +150,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "assets")],
     }
   );
 
