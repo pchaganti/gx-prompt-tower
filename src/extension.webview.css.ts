@@ -498,6 +498,55 @@ export function getWebviewStyles(): string {
           font-weight: bold;
           color: var(--vscode-descriptionForeground);
         }
+
+        /* Collapsible sections */
+        .textarea-container.collapsible .section-header {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          padding: 8px 0;
+          user-select: none;
+        }
+        .textarea-container.collapsible .section-header:hover {
+          opacity: 0.8;
+        }
+        .textarea-container.collapsible .section-header label {
+          cursor: pointer;
+          margin-bottom: 0;
+        }
+        .collapse-icon {
+          margin-right: 8px;
+          font-size: 0.8em;
+          transition: transform 0.2s ease;
+          display: inline-block;
+        }
+        .textarea-container.collapsible:not(.collapsed) .collapse-icon {
+          transform: rotate(90deg);
+        }
+        .textarea-container.collapsible .section-content {
+          max-height: 500px;
+          overflow: hidden;
+          transition: max-height 0.3s ease, opacity 0.2s ease;
+          position: relative;
+        }
+        .textarea-container.collapsible.collapsed .section-content {
+          max-height: 0;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        /* Select Previous link */
+        .select-previous-link {
+          display: block;
+          text-align: right;
+          margin-top: 4px;
+          font-size: 0.85em !important;
+          color: var(--vscode-textLink-foreground);
+          cursor: pointer;
+        }
+        .select-previous-link:hover {
+          color: var(--vscode-textLink-activeForeground);
+        }
         #preview-container {
             display: flex;
             flex-direction: column;

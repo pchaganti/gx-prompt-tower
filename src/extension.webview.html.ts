@@ -11,6 +11,8 @@ export interface WebviewParams {
   initialPrefix: string;
   initialSuffix: string;
   platform: string;
+  prefixCollapsed: boolean;
+  suffixCollapsed: boolean;
 }
 
 export function getWebviewHtml(params: WebviewParams): string {
@@ -54,14 +56,26 @@ export function getWebviewHtml(params: WebviewParams): string {
                   <button id="resetAllButton">Reset All</button>
               </div>
 
-              <div id="prompt-prefix-container" class="textarea-container">
-                <label for="prompt-prefix">Prompt Prefix</label>
-                <textarea id="prompt-prefix">${params.initialPrefix}</textarea>
+              <div id="prompt-prefix-container" class="textarea-container collapsible${params.prefixCollapsed ? ' collapsed' : ''}">
+                <div class="section-header" data-toggle="prefix">
+                  <span class="collapse-icon">▶</span>
+                  <label for="prompt-prefix">Prompt Prefix</label>
+                </div>
+                <div class="section-content">
+                  <textarea id="prompt-prefix">${params.initialPrefix}</textarea>
+                  <a class="select-previous-link" data-target="prefix">Select Previous...</a>
+                </div>
               </div>
 
-              <div id="prompt-suffix-container" class="textarea-container">
-                <label for="prompt-suffix">Prompt Suffix</label>
-                <textarea id="prompt-suffix">${params.initialSuffix}</textarea>
+              <div id="prompt-suffix-container" class="textarea-container collapsible${params.suffixCollapsed ? ' collapsed' : ''}">
+                <div class="section-header" data-toggle="suffix">
+                  <span class="collapse-icon">▶</span>
+                  <label for="prompt-suffix">Prompt Suffix</label>
+                </div>
+                <div class="section-content">
+                  <textarea id="prompt-suffix">${params.initialSuffix}</textarea>
+                  <a class="select-previous-link" data-target="suffix">Select Previous...</a>
+                </div>
               </div>
 
               <div class="action-groups">
@@ -505,6 +519,25 @@ export function getWebviewHtml(params: WebviewParams): string {
                                     previewStatusElement.textContent = '⚠️ Context may be out of sync. Click "Create Context" to update.';
                                 }
                                 break;
+                            case 'setCollapseState':
+                                // Update collapse states from extension
+                                const prefixContainer = document.getElementById('prompt-prefix-container');
+                                const suffixContainer = document.getElementById('prompt-suffix-container');
+                                if (prefixContainer) {
+                                    if (message.prefix) {
+                                        prefixContainer.classList.add('collapsed');
+                                    } else {
+                                        prefixContainer.classList.remove('collapsed');
+                                    }
+                                }
+                                if (suffixContainer) {
+                                    if (message.suffix) {
+                                        suffixContainer.classList.add('collapsed');
+                                    } else {
+                                        suffixContainer.classList.remove('collapsed');
+                                    }
+                                }
+                                break;
                             case 'showOnboardingModal':
                                 // Show the first-time onboarding modal
                                 showModal('onboarding', 'Welcome to Automated Prompt Pushing!', \`
@@ -657,6 +690,35 @@ export function getWebviewHtml(params: WebviewParams): string {
                         }
                     });
                     
+                    // Section header collapse toggle handlers
+                    document.querySelectorAll('.section-header').forEach(header => {
+                        header.addEventListener('click', () => {
+                            const section = header.getAttribute('data-toggle');
+                            const container = header.closest('.textarea-container');
+                            if (container && section) {
+                                container.classList.toggle('collapsed');
+                                const isCollapsed = container.classList.contains('collapsed');
+                                vscode.postMessage({
+                                    command: 'toggleCollapse',
+                                    section: section,
+                                    collapsed: isCollapsed
+                                });
+                            }
+                        });
+                    });
+
+                    // Select Previous link handlers
+                    document.querySelectorAll('.select-previous-link').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const target = e.target.getAttribute('data-target');
+                            vscode.postMessage({
+                                command: 'selectPrevious',
+                                target: target
+                            });
+                        });
+                    });
+
                     vscode.postMessage({ command: "webviewReady" });
                 }());
               </script>

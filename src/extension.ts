@@ -15,6 +15,7 @@ import { IgnorePatternService } from "./services/IgnorePatternService";
 import { ContextGenerationService } from "./services/ContextGenerationService";
 import { PromptPushService, AIProvider } from "./services/PromptPushService";
 import { EditorAutomationService } from "./services/EditorAutomationService";
+import { PromptHistoryService, PromptType } from "./services/PromptHistoryService";
 import { FileNode } from "./models/FileNode";
 import { TokenUpdatePayload } from "./models/Events";
 import { GitHubConfigManager } from "./utils/githubConfig";
@@ -24,6 +25,7 @@ import { getWebviewHtml, WebviewParams } from "./extension.webview.html";
 let webviewPanel: vscode.WebviewPanel | undefined;
 const VIEW_TYPE = "promptTowerUI";
 
+
 // --- Service Instances ---
 let workspaceManager: WorkspaceManager;
 let ignorePatternService: IgnorePatternService;
@@ -32,6 +34,7 @@ let tokenCountingService: TokenCountingService;
 let contextGenerationService: ContextGenerationService;
 let promptPushService: PromptPushService;
 let editorAutomationService: EditorAutomationService;
+let promptHistoryService: PromptHistoryService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
 let prsProviderInstance: GitHubPRsProvider | undefined;
@@ -94,7 +97,9 @@ function getWebviewContent(
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
   initialPrefix: string = "",
-  initialSuffix: string = ""
+  initialSuffix: string = "",
+  prefixCollapsed: boolean = false,
+  suffixCollapsed: boolean = true
 ): string {
   const nonce = getNonce();
 
@@ -127,6 +132,8 @@ function getWebviewContent(
     initialPrefix,
     initialSuffix,
     platform: process.platform,
+    prefixCollapsed,
+    suffixCollapsed,
   };
 
   return getWebviewHtml(params);
@@ -154,11 +161,17 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     }
   );
 
+  // Get collapse states from globalState
+  const prefixCollapsed = context.globalState.get("promptTower.prefixCollapsed", false);
+  const suffixCollapsed = context.globalState.get("promptTower.suffixCollapsed", true);
+
   webviewPanel.webview.html = getWebviewContent(
     webviewPanel.webview,
     context.extensionUri,
     multiRootProvider ? multiRootProvider.getPromptPrefix() : "",
-    multiRootProvider ? multiRootProvider.getPromptSuffix() : ""
+    multiRootProvider ? multiRootProvider.getPromptSuffix() : "",
+    prefixCollapsed,
+    suffixCollapsed
   );
 
   // Update context for status tree visibility
@@ -218,16 +231,29 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
               const removeComments = options.removeComments ?? false;
 
               const allRootNodes = multiRootProvider.getRootNodes();
+              const prefix = multiRootProvider.getPromptPrefix();
+              const suffix = multiRootProvider.getPromptSuffix();
 
               // Generate context with tree type option
               const result = await contextGenerationService.generateContext(
                 allRootNodes,
                 {
-                  prefix: multiRootProvider.getPromptPrefix(),
-                  suffix: multiRootProvider.getPromptSuffix(),
+                  prefix,
+                  suffix,
                   treeType: treeType,
                 }
               );
+
+              // Save prompts to history
+              const primaryWorkspace = workspaceManager.getPrimaryWorkspace();
+              if (primaryWorkspace && promptHistoryService) {
+                promptHistoryService.savePrompts(
+                  prefix,
+                  suffix,
+                  primaryWorkspace.name,
+                  primaryWorkspace.rootPath
+                );
+              }
 
               // Copy to clipboard if option is checked
               if (copyToClipboard) {
@@ -516,6 +542,57 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           }
           break;
 
+        case "toggleCollapse":
+          // Persist collapse state for prefix/suffix sections
+          if (message.section === "prefix" || message.section === "suffix") {
+            const key = `promptTower.${message.section}Collapsed`;
+            context.globalState.update(key, message.collapsed);
+          }
+          break;
+
+        case "selectPrevious":
+          if (promptHistoryService && webviewPanel) {
+            const target = message.target as PromptType;
+            const primaryWorkspace = workspaceManager.getPrimaryWorkspace();
+            const workspacePath = primaryWorkspace?.rootPath || "";
+
+            // Check if history is empty
+            if (promptHistoryService.isEmpty(target)) {
+              vscode.window.showInformationMessage(
+                `No saved ${target === "prefix" ? "prefixes" : "suffixes"} yet. Create context with a ${target} to save it.`
+              );
+              break;
+            }
+
+            // Get QuickPick items
+            const items = promptHistoryService.getQuickPickItems(target, workspacePath);
+
+            // Show QuickPick
+            const selected = await vscode.window.showQuickPick(items, {
+              placeHolder: `Select a previous ${target}`,
+              title: `${target === "prefix" ? "Prefix" : "Suffix"} History`,
+            });
+
+            // If user selected an item, update the textarea
+            if (selected?.entry) {
+              const command = target === "prefix" ? "updatePrefix" : "updateSuffix";
+              webviewPanel.webview.postMessage({
+                command,
+                text: selected.entry.text,
+              });
+              // Also update the provider state
+              if (multiRootProvider) {
+                if (target === "prefix") {
+                  multiRootProvider.setPromptPrefix(selected.entry.text);
+                } else {
+                  multiRootProvider.setPromptSuffix(selected.entry.text);
+                }
+              }
+              invalidateWebviewPreview();
+            }
+          }
+          break;
+
         case "sendToEditor":
           if (
             multiRootProvider &&
@@ -735,6 +812,7 @@ export function activate(context: vscode.ExtensionContext) {
   contextGenerationService = new ContextGenerationService();
   promptPushService = new PromptPushService();
   editorAutomationService = new EditorAutomationService();
+  promptHistoryService = new PromptHistoryService(context);
 
   // Check if we have workspaces
   if (!workspaceManager.hasWorkspaces()) {
