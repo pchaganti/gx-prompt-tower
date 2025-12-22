@@ -10,13 +10,13 @@
 
 ## The Problem
 
-Copy-pasting files into Claude, ChatGPT, or Cursor one by one. Losing track of context. Getting generic solutions because the AI doesn't understand your architecture. **Sound familiar?**
+Copy-pasting files into Claude, ChatGPT, or Cursor one by one. Losing track of context. Putting too much effort into manual context engineering? **Sound familiar?**
 
 ## The Solution
 
 Select files with checkboxes → Generate perfect context → Copy to clipboard → Paste anywhere.
 
-Prompt Tower packages your codebase—files, directory structure, GitHub issues—into AI-optimized prompts. Built for developers using Gemini's 1M context, Cursor's agent, Claude Code, or any AI assistant.
+Prompt Tower packages your codebase—files, directory structure, GithHub PR Diffs, GitHub issues—into AI-optimized prompts. Built for developers using Gemini's 1M context, Cursor's agent, Claude Code, or any AI assistant.
 
 ![Demo](https://github.com/backnotprop/prompt-tower/blob/main/assets/prompt-tower-v1.0.0.gif?raw=true)
 
@@ -136,8 +136,6 @@ git clone https://github.com/backnotprop/prompt-tower.git
 npm install && npm run watch
 # Press F5 to launch Extension Development Host
 ```
-
-See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture details.
 
 ---
 

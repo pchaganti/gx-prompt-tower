@@ -1,5 +1,21 @@
 # Change Log
 
+## [Version 1.5.0] -
+
+### Added
+
+- **GitHub Pull Requests Integration:** Include PR diffs directly in your context
+  - New "GitHub PRs" panel in sidebar (above GitHub Issues)
+  - Select open PRs to include their raw diff in generated context
+  - Fetches diffs directly from GitHub's `.diff` endpoint
+  - Token counting for PR diffs
+  - Works with same authentication as GitHub Issues
+
+### Housekeeping
+
+- Consolidated `media/` folder into `assets/`
+- Removed unused test infrastructure
+
 ## [Version 1.4.1] -
 
 ### Improved
