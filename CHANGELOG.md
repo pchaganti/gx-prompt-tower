@@ -1,5 +1,21 @@
 # Change Log
 
+## [Version 1.6.0] -
+
+### Added
+
+- **Prompt History:** Automatically saves your prefix/suffix prompts for easy reuse
+  - Click "Select Previous..." to browse saved prompts
+  - History organized by workspace (current workspace first, others below)
+  - Shows relative timestamps ("2h ago", "3d ago")
+  - Separate histories for prefix and suffix
+  - Auto-deduplicates entries
+
+- **Collapsible Prefix/Suffix Sections:** Cleaner UI with expandable text areas
+  - Prefix expanded by default, suffix collapsed
+  - Click header to toggle visibility
+  - Collapse state persists across sessions
+
 ## [Version 1.5.0] -
 
 ### Added
