@@ -1,8 +1,14 @@
-# Prompt Tower: GitHub Issues Integration
+# Prompt Tower: GitHub Integration
 
-## What This Does
+Prompt Tower integrates with GitHub to pull in issues and PR diffs directly into your context.
 
-GitHub Issues integration lets you include relevant issues alongside your code when creating context for AI coding assistants. Instead of manually copying issue descriptions into chat, select the issues you're working on and they automatically become part of your generated context.
+---
+
+## GitHub Issues
+
+### What This Does
+
+Include relevant issues alongside your code when creating context for AI coding assistants. Instead of manually copying issue descriptions into chat, select the issues you're working on and they automatically become part of your generated context.
 
 This is particularly useful when:
 
@@ -45,12 +51,61 @@ Selected issues are formatted as structured blocks in your context:
 
 This gives AI assistants complete context about what you're building and why.
 
+---
+
+## GitHub Pull Requests
+
+### What This Does
+
+GitHub PR integration lets you include the raw diff from any open pull request in your context. This is useful when:
+
+- Reviewing PRs and wanting AI assistance understanding the changes
+- Working on a PR and needing help with related code
+- Debugging issues introduced in a specific PR
+- Getting AI help to write PR descriptions or review comments
+
+### How to Use It
+
+1. **Open the GitHub PRs panel** in your Prompt Tower sidebar (appears above GitHub Issues)
+2. **Click to expand** the PR list - this loads your repository's open PRs
+3. **Select relevant PRs** using the checkboxes
+4. **Generate context** - the raw diff from each selected PR is included
+
+### Generated Context Format
+
+Selected PRs include the raw unified diff:
+
+```xml
+<github_pr number="123">
+diff --git a/src/components/Button.tsx b/src/components/Button.tsx
+index abc123..def456 100644
+--- a/src/components/Button.tsx
++++ b/src/components/Button.tsx
+@@ -1,5 +1,7 @@
++import { useTheme } from '../hooks/useTheme';
++
+ export function Button({ children }) {
++  const theme = useTheme();
+   return (
+-    <button className="btn">
++    <button className={theme.button}>
+       {children}
+     </button>
+   );
+ }
+</github_pr>
+```
+
+The diff is fetched directly from GitHub's `.diff` endpoint (e.g., `https://github.com/owner/repo/pull/123.diff`).
+
+---
+
 ## Authentication
 
 ### When You Need It
 
-- **Private repositories**: Authentication required to access issues
-- **Heavy usage**: Rate limits kick in after ~3 context generations per hour without auth
+- **Private repositories**: Authentication required to access issues and PR diffs
+- **Heavy usage**: Rate limits kick in after ~60 unauthenticated requests per hour
 - **Team repositories**: Some organizations require authentication for any API access
 
 Get your PAT from the GitHub Settings, read here: [Docs for PATs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
@@ -70,8 +125,10 @@ Once authenticated, you get 5,000 API requests per hour instead of 60.
 
 ## Current Limitations
 
-**Filtering**: No built-in filtering by label, assignee, or milestone yet. The extension loads recent open issues by default.
+**Issues**:
+- No filtering by label, assignee, or milestone yet
+- Shows the 100 most recent open issues
 
-**Pagination**: The extension shows the 100 most recent open issues by default.
-
-Future work can address these limitations.
+**Pull Requests**:
+- Shows the 100 most recent open PRs
+- Large diffs may use significant tokens
