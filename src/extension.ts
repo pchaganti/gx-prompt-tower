@@ -4,6 +4,10 @@ import {
   GitHubIssuesProvider,
   GitHubIssue,
 } from "./providers/GitHubIssuesProvider";
+import {
+  GitHubPRsProvider,
+  GitHubPR,
+} from "./providers/GitHubPRsProvider";
 import { WorkspaceManager } from "./services/WorkspaceManager";
 import { FileDiscoveryService } from "./services/FileDiscoveryService";
 import { TokenCountingService } from "./services/TokenCountingService";
@@ -30,6 +34,7 @@ let promptPushService: PromptPushService;
 let editorAutomationService: EditorAutomationService;
 let multiRootProvider: MultiRootTreeProvider;
 let issuesProviderInstance: GitHubIssuesProvider | undefined;
+let prsProviderInstance: GitHubPRsProvider | undefined;
 let mainTreeView: vscode.TreeView<FileNode>;
 let statusWebview: vscode.WebviewView | undefined;
 
@@ -830,6 +835,37 @@ export function activate(context: vscode.ExtensionContext) {
     // Connect the providers for context generation
     multiRootProvider.setGitHubIssuesProvider(issuesProviderInstance);
     contextGenerationService.setGitHubIssuesProvider(issuesProviderInstance);
+
+    // Initialize GitHub PRs provider
+    prsProviderInstance = new GitHubPRsProvider(
+      context,
+      primaryWorkspace.rootPath
+    );
+    const prsTreeView = vscode.window.createTreeView(
+      "promptTowerPRsView",
+      {
+        treeDataProvider: prsProviderInstance,
+        showCollapseAll: false,
+        canSelectMany: true,
+        manageCheckboxStateManually: true,
+      }
+    );
+
+    context.subscriptions.push(
+      prsTreeView.onDidChangeCheckboxState(async (evt) => {
+        for (const [item, state] of evt.items) {
+          if (item instanceof GitHubPR && prsProviderInstance) {
+            await prsProviderInstance.togglePRSelection(item);
+          }
+        }
+        invalidateWebviewPreview();
+      })
+    );
+
+    context.subscriptions.push(prsTreeView);
+
+    // Connect PR provider for context generation
+    contextGenerationService.setGitHubPRsProvider(prsProviderInstance);
   }
 
   // Register status tree webview provider
@@ -907,6 +943,16 @@ export function activate(context: vscode.ExtensionContext) {
       }
     ),
 
+    // GitHub PRs commands
+    vscode.commands.registerCommand(
+      "promptTower.refreshGitHubPRs",
+      async () => {
+        if (prsProviderInstance) {
+          await prsProviderInstance.reloadPRs();
+        }
+      }
+    ),
+
     vscode.commands.registerCommand("promptTower.addGitHubToken", async () => {
       const token = await vscode.window.showInputBox({
         title: "Add GitHub Personal Access Token",
@@ -928,11 +974,14 @@ export function activate(context: vscode.ExtensionContext) {
         try {
           await GitHubConfigManager.storePAT(context, token);
           vscode.window.showInformationMessage(
-            "GitHub token saved successfully. Refreshing issues..."
+            "GitHub token saved successfully. Refreshing..."
           );
 
           if (issuesProviderInstance) {
             await issuesProviderInstance.reloadIssues();
+          }
+          if (prsProviderInstance) {
+            await prsProviderInstance.reloadPRs();
           }
         } catch (error) {
           vscode.window.showErrorMessage(
@@ -956,11 +1005,14 @@ export function activate(context: vscode.ExtensionContext) {
             await GitHubConfigManager.removePAT(context);
 
             vscode.window.showInformationMessage(
-              "GitHub token removed successfully. Refreshing issues..."
+              "GitHub token removed successfully. Refreshing..."
             );
 
             if (issuesProviderInstance) {
               await issuesProviderInstance.reloadIssues();
+            }
+            if (prsProviderInstance) {
+              await prsProviderInstance.reloadPRs();
             }
           } catch (error) {
             vscode.window.showErrorMessage(

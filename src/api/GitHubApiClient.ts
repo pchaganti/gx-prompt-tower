@@ -28,6 +28,13 @@ export interface GitHubComment {
   };
 }
 
+export interface GitHubPullRequest {
+  number: number;
+  title: string;
+  state: 'open' | 'closed';
+  html_url: string;
+}
+
 interface GitHubApiError extends Error {
   status?: number;
   response?: any;
@@ -148,7 +155,51 @@ export class GitHubApiClient {
     const endpoint = `/repos/${this.owner}/${this.repo}/issues/${issueNumber}/comments`;
     return this.request<GitHubComment[]>(endpoint);
   }
-  
+
+  /**
+   * List pull requests for the repository
+   */
+  async listPullRequests(
+    state: 'open' | 'closed' | 'all' = 'open',
+    perPage: number = 100
+  ): Promise<GitHubPullRequest[]> {
+    const endpoint = `/repos/${this.owner}/${this.repo}/pulls`;
+    const params = new URLSearchParams({
+      state,
+      per_page: perPage.toString(),
+      sort: 'created',
+      direction: 'desc',
+    });
+
+    return this.request<GitHubPullRequest[]>(`${endpoint}?${params}`);
+  }
+
+  /**
+   * Get raw diff for a pull request using the .diff endpoint
+   */
+  async getPullRequestDiff(prNumber: number): Promise<string> {
+    const url = `https://github.com/${this.owner}/${this.repo}/pull/${prNumber}.diff`;
+
+    const headers: Record<string, string> = {
+      'User-Agent': 'PromptTower-VSCode',
+      'Accept': 'text/plain',
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `token ${this.token}`;
+    }
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      const error = new Error(`Failed to fetch PR diff: ${response.status}`) as GitHubApiError;
+      error.status = response.status;
+      throw error;
+    }
+
+    return await response.text();
+  }
+
   /**
    * Update rate limit information from response headers
    */

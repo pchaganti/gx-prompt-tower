@@ -54,7 +54,7 @@
               "template": "<project_tree>\n{projectTree}\n</project_tree>\n"
             },
             "wrapperFormat": {
-              "template": "<context>\n{githubIssues}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+              "template": "<context>\n{githubIssues}{githubPRs}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
             }
           },
           "properties": {
@@ -117,7 +117,7 @@
                 "template": {
                   "type": "string",
                   "description": "The template string for the entire output. Use '{blocks}' as the placeholder for where the combined file blocks will be inserted. Other available placeholders: {timestamp}, {fileCount}, {workspaceRoot}, {outputFileName}.",
-                  "default": "<context>\n{githubIssues{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
+                  "default": "<context>\n{githubIssues}{githubPRs}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>"
                 }
               }
             }
@@ -172,6 +172,11 @@
           "type": "tree"
         },
         {
+          "id": "promptTowerPRsView",
+          "name": "GitHub PRs",
+          "type": "tree"
+        },
+        {
           "id": "promptTowerIssuesView",
           "name": "GitHub Issues",
           "type": "tree"
@@ -214,6 +219,12 @@
       {
         "command": "promptTower.refreshGitHubIssues",
         "title": "Refresh GitHub Issues",
+        "category": "Prompt Tower",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "promptTower.refreshGitHubPRs",
+        "title": "Refresh GitHub PRs",
         "category": "Prompt Tower",
         "icon": "$(refresh)"
       },
@@ -291,6 +302,11 @@
         {
           "command": "promptTower.refreshGitHubIssues",
           "when": "view == promptTowerIssuesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "promptTower.refreshGitHubPRs",
+          "when": "view == promptTowerPRsView",
           "group": "navigation@1"
         }
       ],

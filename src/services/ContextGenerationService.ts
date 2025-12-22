@@ -28,6 +28,7 @@ interface StructuredFilePath {
 export class ContextGenerationService {
   private config!: ContextConfig; // Use definite assignment assertion
   private gitHubIssuesProvider?: any;
+  private gitHubPRsProvider?: any;
 
   constructor() {
     this.loadConfiguration();
@@ -55,7 +56,7 @@ export class ContextGenerationService {
         wrapperFormat === null
           ? null
           : wrapperFormat?.template ||
-            "<context>\n{githubIssues}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>",
+            "<context>\n{githubIssues}{githubPRs}{treeBlock}<project_files>\n{blocks}\n</project_files>\n</context>",
       projectTree: {
         enabled: projectTreeFormat.enabled ?? true,
         type: projectTreeFormat.type || "fullFilesAndDirectories",
@@ -109,7 +110,19 @@ export class ContextGenerationService {
       }
     }
 
-    if (fileCount === 0 && !hasSelectedIssues) {
+    // Check if we have GitHub PRs selected
+    let hasSelectedPRs = false;
+    if (this.gitHubPRsProvider) {
+      try {
+        const selectedPRs =
+          await this.gitHubPRsProvider.getSelectedPRDetails();
+        hasSelectedPRs = selectedPRs && selectedPRs.size > 0;
+      } catch (error) {
+        console.error("Error checking GitHub PRs:", error);
+      }
+    }
+
+    if (fileCount === 0 && !hasSelectedIssues && !hasSelectedPRs) {
       // If project tree is enabled and configured to show all files, generate tree-only context
       if (
         this.config.projectTree.enabled &&
@@ -156,10 +169,14 @@ export class ContextGenerationService {
       // Generate GitHub issues if provider is available
       const githubIssuesPromise = this.generateGitHubIssuesBlocks();
 
+      // Generate GitHub PRs if provider is available
+      const githubPRsPromise = this.generateGitHubPRsBlocks();
+
       // Wait for all processing to complete
-      const [fileTree, githubIssuesBlocks, ...fileBlocks] = await Promise.all([
+      const [fileTree, githubIssuesBlocks, githubPRsBlocks, ...fileBlocks] = await Promise.all([
         projectTreePromise,
         githubIssuesPromise,
+        githubPRsPromise,
         ...fileBlockPromises,
       ]);
 
@@ -172,10 +189,17 @@ export class ContextGenerationService {
           ? githubIssuesBlocks.join(this.config.blockSeparator)
           : "";
 
+      // Join GitHub PRs
+      const joinedGithubPRs =
+        githubPRsBlocks.length > 0
+          ? githubPRsBlocks.join(this.config.blockSeparator)
+          : "";
+
       // Apply wrapper template
       let finalContext = this.applyWrapperTemplate(
         joinedFileBlocks,
         joinedGithubIssues,
+        joinedGithubPRs,
         fileTree,
         fileCount
       );
@@ -372,18 +396,14 @@ export class ContextGenerationService {
   private applyWrapperTemplate(
     fileBlocks: string,
     githubIssues: string,
+    githubPRs: string,
     projectTree: string,
     fileCount: number
   ): string {
     if (!this.config.wrapperTemplate) {
       // No wrapper - combine directly
-      if (githubIssues && fileBlocks) {
-        return githubIssues + this.config.blockSeparator + fileBlocks;
-      } else if (githubIssues) {
-        return githubIssues;
-      } else {
-        return fileBlocks;
-      }
+      const parts = [githubIssues, githubPRs, fileBlocks].filter(p => p);
+      return parts.join(this.config.blockSeparator);
     }
 
     let wrapped = this.config.wrapperTemplate;
@@ -396,9 +416,13 @@ export class ContextGenerationService {
     // Create GitHub issues section
     const githubIssuesSection = githubIssues ? `${githubIssues}\n` : "";
 
+    // Create GitHub PRs section
+    const githubPRsSection = githubPRs ? `${githubPRs}\n` : "";
+
     // Replace all placeholders
     wrapped = wrapped.replace(/{treeBlock}/g, treeBlock);
     wrapped = wrapped.replace(/{githubIssues}/g, githubIssuesSection);
+    wrapped = wrapped.replace(/{githubPRs}/g, githubPRsSection);
     wrapped = wrapped.replace(/{blocks}/g, fileBlocks);
     wrapped = wrapped.replace(/{timestamp}/g, new Date().toISOString());
     wrapped = wrapped.replace(/{fileCount}/g, String(fileCount));
@@ -467,6 +491,13 @@ export class ContextGenerationService {
   }
 
   /**
+   * Set the GitHub PRs provider for integration
+   */
+  setGitHubPRsProvider(provider: any): void {
+    this.gitHubPRsProvider = provider;
+  }
+
+  /**
    * Generate formatted blocks for selected GitHub issues
    */
   private async generateGitHubIssuesBlocks(): Promise<string[]> {
@@ -519,6 +550,36 @@ ${comment.body}
       return blocks;
     } catch (error) {
       console.error("Error generating GitHub issues blocks:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Generate formatted blocks for selected GitHub PRs
+   */
+  private async generateGitHubPRsBlocks(): Promise<string[]> {
+    if (!this.gitHubPRsProvider) {
+      return [];
+    }
+
+    try {
+      const selectedPRs = await this.gitHubPRsProvider.getSelectedPRDetails();
+
+      if (selectedPRs.size === 0) {
+        return [];
+      }
+
+      const blocks: string[] = [];
+
+      for (const [prNumber, details] of selectedPRs) {
+        const { diff } = details;
+        const prBlock = `<github_pr number="${prNumber}">\n${diff}\n</github_pr>`;
+        blocks.push(prBlock);
+      }
+
+      return blocks;
+    } catch (error) {
+      console.error("Error generating GitHub PRs blocks:", error);
       return [];
     }
   }
