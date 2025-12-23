@@ -547,6 +547,67 @@ export function getWebviewStyles(): string {
         .select-previous-link:hover {
           color: var(--vscode-textLink-activeForeground);
         }
+
+        /* Collapsible Automation Section (inline variant) */
+        .automation-section.inline {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: var(--vscode-editorWidget-background);
+          border: 1px solid var(--vscode-editorWidget-border);
+          border-radius: 8px;
+          padding: 16px;
+          min-width: 0;
+        }
+        .automation-section .section-header {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          user-select: none;
+          margin-bottom: 12px;
+        }
+        .automation-section.collapsed .section-header {
+          margin-bottom: 0;
+        }
+        .automation-section .section-header:hover {
+          opacity: 0.8;
+        }
+        .automation-section .section-header .collapse-icon {
+          margin-right: 8px;
+          font-size: 0.8em;
+          transition: transform 0.2s ease;
+          display: inline-block;
+        }
+        .automation-section:not(.collapsed) .section-header .collapse-icon {
+          transform: rotate(90deg);
+        }
+        .automation-section .section-header h3 {
+          margin: 0;
+          font-size: 1em;
+          font-weight: 600;
+          color: var(--vscode-descriptionForeground);
+        }
+        .automation-section .section-content {
+          max-height: 1000px;
+          overflow: hidden;
+          transition: max-height 0.3s ease, opacity 0.2s ease;
+        }
+        .automation-section.collapsed .section-content {
+          max-height: 0;
+          opacity: 0;
+          pointer-events: none;
+        }
+        .automation-section .automation-groups {
+          display: flex;
+          flex-direction: row;
+          gap: 16px;
+        }
+        .automation-section .automation-groups .action-group {
+          flex: 1;
+          background: transparent;
+          border: none;
+          padding: 0;
+        }
         #preview-container {
             display: flex;
             flex-direction: column;

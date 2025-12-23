@@ -13,6 +13,7 @@ export interface WebviewParams {
   platform: string;
   prefixCollapsed: boolean;
   suffixCollapsed: boolean;
+  automationCollapsed: boolean;
 }
 
 export function getWebviewHtml(params: WebviewParams): string {
@@ -107,174 +108,185 @@ export function getWebviewHtml(params: WebviewParams): string {
                   </div>
                 </div>
 
-                <!-- Send to Editor Group (macOS working, Windows coming soon) -->
-                ${params.platform === 'darwin' ? `
-                <div class="action-group">
-                  <div class="action-buttons">
-                    <div class="send-to-editor-group">
-                      <button id="sendToEditorButton" class="send-to-editor-btn">
-                        <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
-                        Send to Chat
-                      </button>
-                    </div>
+                <!-- Automation Section (collapsible, inline) -->
+                <div id="automation-section" class="automation-section inline${params.automationCollapsed ? ' collapsed' : ''}">
+                  <div class="section-header" data-toggle="automation">
+                    <span class="collapse-icon">▶</span>
+                    <h3>Automation</h3>
                   </div>
-                  <div class="action-options">
-                    <div class="send-to-options">
-                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
-                      <label class="radio-container">
-                        <input type="radio" name="sendTarget" value="agent" checked>
-                        <span class="radio-checkmark"></span>
-                        Agent
-                      </label>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="sendTarget" value="ask" disabled>
-                        <span class="radio-checkmark"></span>
-                        Ask
-                        <span class="feature-badge">Soon</span>
-                      </label>
-                    </div>
-                    <div class="chat-target-options">
-                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
-                      <label class="radio-container">
-                        <input type="radio" name="chatTarget" value="new" checked>
-                        <span class="radio-checkmark"></span>
-                        New
-                      </label>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="chatTarget" value="current" disabled>
-                        <span class="radio-checkmark"></span>
-                        Current
-                        <span class="feature-badge">Soon</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                ` : params.platform === 'win32' ? `
-                <div class="action-group windows-preview">
-                  <div class="action-buttons">
-                    <div class="send-to-editor-group">
-                      <button class="send-to-editor-btn disabled" disabled>
-                        <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
-                        Send to Chat
-                        <span class="feature-badge">Windows Soon</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="action-options">
-                    <div class="send-to-options">
-                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="sendTarget" value="agent" checked disabled>
-                        <span class="radio-checkmark"></span>
-                        Agent
-                      </label>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="sendTarget" value="ask" disabled>
-                        <span class="radio-checkmark"></span>
-                        Ask
-                        <span class="feature-badge">Soon</span>
-                      </label>
-                    </div>
-                    <div class="chat-target-options">
-                      <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="chatTarget" value="new" checked disabled>
-                        <span class="radio-checkmark"></span>
-                        New
-                      </label>
-                      <label class="radio-container disabled">
-                        <input type="radio" name="chatTarget" value="current" disabled>
-                        <span class="radio-checkmark"></span>
-                        Current
-                        <span class="feature-badge">Soon</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                ` : ''}
-
-                <!-- Push Prompt Group (macOS working, Windows coming soon) -->
-                ${params.platform === 'darwin' ? `
-                <div class="action-group">
-                  <div class="action-buttons">
-                    <div class="push-prompt-group">
-                      <button id="pushPromptButton" class="push-prompt-btn">Push Prompt</button>
-                      <div class="provider-dropdown">
-                        <button class="provider-dropdown-btn" id="providerDropdownBtn">
-                          <img id="selectedProviderLogo" src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
-                          <svg viewBox="0 0 16 16">
-                            <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
-                          </svg>
-                        </button>
-                        <div class="provider-dropdown-content" id="providerDropdownContent">
-                          <button class="provider-option" data-provider="chatgpt">
-                            <img src="${params.chatgptLogo}" alt="ChatGPT" class="provider-logo">
-                            <span class="provider-name">ChatGPT</span>
-                          </button>
-                          <button class="provider-option" data-provider="claude">
-                            <img src="${params.claudeLogo}" alt="Claude" class="provider-logo">
-                            <span class="provider-name">Claude</span>
-                          </button>
-                          <button class="provider-option" data-provider="gemini">
-                            <img src="${params.geminiLogo}" alt="Gemini" class="provider-logo">
-                            <span class="provider-name">Gemini</span>
-                          </button>
-                          <button class="provider-option" data-provider="aistudio">
-                            <img src="${params.aistudioLogo}" alt="AI Studio" class="provider-logo">
-                            <span class="provider-name">AI Studio</span>
+                  <div class="section-content">
+                    <div class="automation-groups">
+                    <!-- Send to Editor Group (macOS working, Windows coming soon) -->
+                    ${params.platform === 'darwin' ? `
+                    <div class="action-group">
+                      <div class="action-buttons">
+                        <div class="send-to-editor-group">
+                          <button id="sendToEditorButton" class="send-to-editor-btn">
+                            <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
+                            Send to Chat
                           </button>
                         </div>
                       </div>
+                      <div class="action-options">
+                        <div class="send-to-options">
+                          <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
+                          <label class="radio-container">
+                            <input type="radio" name="sendTarget" value="agent" checked>
+                            <span class="radio-checkmark"></span>
+                            Agent
+                          </label>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="sendTarget" value="ask" disabled>
+                            <span class="radio-checkmark"></span>
+                            Ask
+                            <span class="feature-badge">Soon</span>
+                          </label>
+                        </div>
+                        <div class="chat-target-options">
+                          <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
+                          <label class="radio-container">
+                            <input type="radio" name="chatTarget" value="new" checked>
+                            <span class="radio-checkmark"></span>
+                            New
+                          </label>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="chatTarget" value="current" disabled>
+                            <span class="radio-checkmark"></span>
+                            Current
+                            <span class="feature-badge">Soon</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    ` : params.platform === 'win32' ? `
+                    <div class="action-group windows-preview">
+                      <div class="action-buttons">
+                        <div class="send-to-editor-group">
+                          <button class="send-to-editor-btn disabled" disabled>
+                            <img src="${params.cursorLogo}" alt="Cursor" class="editor-logo">
+                            Send to Chat
+                            <span class="feature-badge">Windows Soon</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="action-options">
+                        <div class="send-to-options">
+                          <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Send to:</span>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="sendTarget" value="agent" checked disabled>
+                            <span class="radio-checkmark"></span>
+                            Agent
+                          </label>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="sendTarget" value="ask" disabled>
+                            <span class="radio-checkmark"></span>
+                            Ask
+                            <span class="feature-badge">Soon</span>
+                          </label>
+                        </div>
+                        <div class="chat-target-options">
+                          <span style="margin-right: 8px; font-size: 0.9em; color: var(--vscode-descriptionForeground);">Chat:</span>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="chatTarget" value="new" checked disabled>
+                            <span class="radio-checkmark"></span>
+                            New
+                          </label>
+                          <label class="radio-container disabled">
+                            <input type="radio" name="chatTarget" value="current" disabled>
+                            <span class="radio-checkmark"></span>
+                            Current
+                            <span class="feature-badge">Soon</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Push Prompt Group (macOS working, Windows coming soon) -->
+                    ${params.platform === 'darwin' ? `
+                    <div class="action-group">
+                      <div class="action-buttons">
+                        <div class="push-prompt-group">
+                          <button id="pushPromptButton" class="push-prompt-btn">Push Prompt</button>
+                          <div class="provider-dropdown">
+                            <button class="provider-dropdown-btn" id="providerDropdownBtn">
+                              <img id="selectedProviderLogo" src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
+                              <svg viewBox="0 0 16 16">
+                                <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
+                              </svg>
+                            </button>
+                            <div class="provider-dropdown-content" id="providerDropdownContent">
+                              <button class="provider-option" data-provider="chatgpt">
+                                <img src="${params.chatgptLogo}" alt="ChatGPT" class="provider-logo">
+                                <span class="provider-name">ChatGPT</span>
+                              </button>
+                              <button class="provider-option" data-provider="claude">
+                                <img src="${params.claudeLogo}" alt="Claude" class="provider-logo">
+                                <span class="provider-name">Claude</span>
+                              </button>
+                              <button class="provider-option" data-provider="gemini">
+                                <img src="${params.geminiLogo}" alt="Gemini" class="provider-logo">
+                                <span class="provider-name">Gemini</span>
+                              </button>
+                              <button class="provider-option" data-provider="aistudio">
+                                <img src="${params.aistudioLogo}" alt="AI Studio" class="provider-logo">
+                                <span class="provider-name">AI Studio</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="action-options">
+                        <label class="checkbox-container">
+                          <input type="checkbox" id="autoSubmitCheckbox" checked>
+                          <span class="checkmark"></span>
+                          Auto-submit
+                        </label>
+                        <span class="option-separator">•</span>
+                        <a href="#" id="helpfulInfoLink" class="helpful-info-link">helpful info</a>
+                      </div>
+                    </div>
+                    ` : params.platform === 'win32' ? `
+                    <div class="action-group windows-preview">
+                      <div class="action-buttons">
+                        <div class="push-prompt-group">
+                          <button class="push-prompt-btn disabled" disabled>
+                            Push Prompt
+                            <span class="feature-badge">Windows Soon</span>
+                          </button>
+                          <button class="provider-dropdown-btn disabled" disabled>
+                            <img src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
+                            <svg viewBox="0 0 16 16">
+                              <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="action-options">
+                        <label class="checkbox-container disabled">
+                          <input type="checkbox" checked disabled>
+                          <span class="checkmark"></span>
+                          Auto-submit
+                        </label>
+                        <span class="option-separator">•</span>
+                        <span style="color: var(--vscode-descriptionForeground); font-size: 0.9em;">helpful info</span>
+                      </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Linux users notice -->
+                    ${params.platform !== 'darwin' && params.platform !== 'win32' ? `
+                    <div class="action-group">
+                      <div style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground); font-style: italic;">
+                        Editor automation features are available on macOS and Windows only.
+                        <br>
+                        Use "Create Context" to copy content manually.
+                      </div>
+                    </div>
+                    ` : ''}
                     </div>
                   </div>
-                  <div class="action-options">
-                    <label class="checkbox-container">
-                      <input type="checkbox" id="autoSubmitCheckbox" checked>
-                      <span class="checkmark"></span>
-                      Auto-submit
-                    </label>
-                    <span class="option-separator">•</span>
-                    <a href="#" id="helpfulInfoLink" class="helpful-info-link">helpful info</a>
-                  </div>
                 </div>
-                ` : params.platform === 'win32' ? `
-                <div class="action-group windows-preview">
-                  <div class="action-buttons">
-                    <div class="push-prompt-group">
-                      <button class="push-prompt-btn disabled" disabled>
-                        Push Prompt
-                        <span class="feature-badge">Windows Soon</span>
-                      </button>
-                      <button class="provider-dropdown-btn disabled" disabled>
-                        <img src="${params.geminiLogo}" alt="Selected Provider" class="selected-provider-logo">
-                        <svg viewBox="0 0 16 16">
-                          <path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="action-options">
-                    <label class="checkbox-container disabled">
-                      <input type="checkbox" checked disabled>
-                      <span class="checkmark"></span>
-                      Auto-submit
-                    </label>
-                    <span class="option-separator">•</span>
-                    <span style="color: var(--vscode-descriptionForeground); font-size: 0.9em;">helpful info</span>
-                  </div>
-                </div>
-                ` : ''}
-                
-                <!-- Linux users notice -->
-                ${params.platform !== 'darwin' && params.platform !== 'win32' ? `
-                <div class="action-group">
-                  <div style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground); font-style: italic;">
-                    Editor automation features are available on macOS and Windows only.
-                    <br>
-                    Use "Create Context" to copy content manually.
-                  </div>
-                </div>
-                ` : ''}
               </div>
 
               <div id="preview-container">
@@ -523,6 +535,7 @@ export function getWebviewHtml(params: WebviewParams): string {
                                 // Update collapse states from extension
                                 const prefixContainer = document.getElementById('prompt-prefix-container');
                                 const suffixContainer = document.getElementById('prompt-suffix-container');
+                                const automationSection = document.getElementById('automation-section');
                                 if (prefixContainer) {
                                     if (message.prefix) {
                                         prefixContainer.classList.add('collapsed');
@@ -535,6 +548,13 @@ export function getWebviewHtml(params: WebviewParams): string {
                                         suffixContainer.classList.add('collapsed');
                                     } else {
                                         suffixContainer.classList.remove('collapsed');
+                                    }
+                                }
+                                if (automationSection) {
+                                    if (message.automation) {
+                                        automationSection.classList.add('collapsed');
+                                    } else {
+                                        automationSection.classList.remove('collapsed');
                                     }
                                 }
                                 break;
@@ -694,7 +714,8 @@ export function getWebviewHtml(params: WebviewParams): string {
                     document.querySelectorAll('.section-header').forEach(header => {
                         header.addEventListener('click', () => {
                             const section = header.getAttribute('data-toggle');
-                            const container = header.closest('.textarea-container');
+                            // Find the collapsible container (could be textarea-container or automation-section)
+                            const container = header.closest('.textarea-container') || header.closest('.automation-section');
                             if (container && section) {
                                 container.classList.toggle('collapsed');
                                 const isCollapsed = container.classList.contains('collapsed');

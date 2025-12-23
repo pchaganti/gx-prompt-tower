@@ -99,7 +99,8 @@ function getWebviewContent(
   initialPrefix: string = "",
   initialSuffix: string = "",
   prefixCollapsed: boolean = false,
-  suffixCollapsed: boolean = true
+  suffixCollapsed: boolean = true,
+  automationCollapsed: boolean = true
 ): string {
   const nonce = getNonce();
 
@@ -134,6 +135,7 @@ function getWebviewContent(
     platform: process.platform,
     prefixCollapsed,
     suffixCollapsed,
+    automationCollapsed,
   };
 
   return getWebviewHtml(params);
@@ -164,6 +166,7 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
   // Get collapse states from globalState
   const prefixCollapsed = context.globalState.get("promptTower.prefixCollapsed", false);
   const suffixCollapsed = context.globalState.get("promptTower.suffixCollapsed", true);
+  const automationCollapsed = context.globalState.get("promptTower.automationCollapsed", true);
 
   webviewPanel.webview.html = getWebviewContent(
     webviewPanel.webview,
@@ -171,7 +174,8 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
     multiRootProvider ? multiRootProvider.getPromptPrefix() : "",
     multiRootProvider ? multiRootProvider.getPromptSuffix() : "",
     prefixCollapsed,
-    suffixCollapsed
+    suffixCollapsed,
+    automationCollapsed
   );
 
   // Update context for status tree visibility
@@ -543,8 +547,8 @@ function createOrShowWebviewPanel(context: vscode.ExtensionContext) {
           break;
 
         case "toggleCollapse":
-          // Persist collapse state for prefix/suffix sections
-          if (message.section === "prefix" || message.section === "suffix") {
+          // Persist collapse state for prefix/suffix/automation sections
+          if (message.section === "prefix" || message.section === "suffix" || message.section === "automation") {
             const key = `promptTower.${message.section}Collapsed`;
             context.globalState.update(key, message.collapsed);
           }

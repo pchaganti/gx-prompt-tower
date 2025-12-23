@@ -1,5 +1,11 @@
 # Change Log
 
+## [Version 1.6.1] -
+
+### Improved
+
+- **Automation Section Layout:** Moved collapsible Automation section inline (to the right of Create Context) to preserve vertical space for the context preview
+
 ## [Version 1.6.0] -
 
 ### Added
@@ -11,10 +17,10 @@
   - Separate histories for prefix and suffix
   - Auto-deduplicates entries
 
-- **Collapsible Prefix/Suffix Sections:** Cleaner UI with expandable text areas
-  - Prefix expanded by default, suffix collapsed
-  - Click header to toggle visibility
-  - Collapse state persists across sessions
+- **Collapsible UI Sections:** Cleaner interface with expandable sections
+  - Prefix/Suffix: Prefix expanded by default, suffix collapsed
+  - Automation: "Send to Chat" and "Push Prompt" grouped under collapsible "Automation" header (collapsed by default)
+  - All collapse states persist across sessions
 
 ## [Version 1.5.0] -
 
